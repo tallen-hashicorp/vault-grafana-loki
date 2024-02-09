@@ -1,0 +1,62 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: vault_audit_logs
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: auditlogs
+        __path__: /vault-audit.log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            type: type
+            auth_client_token: auth.client_token
+            auth_accessor: auth.accessor
+            auth_display_name: auth.display_name
+            auth_policies: auth.policies
+            auth_token_policies: auth.token_policies
+            metadata_username: auth.metadata.username
+            entity_id: auth.entity_id
+            token_type: auth.token_type
+            token_ttl: auth.token_ttl
+            token_issue_time: auth.token_issue_time
+            request_id: request.id
+            client_id: request.client_id
+            operation: request.operation
+            mount_point: request.mount_point
+            mount_type: request.mount_type
+            mount_accessor: request.mount_accessor
+            mount_running_version: request.mount_running_version
+            mount_class: request.mount_class
+            client_token: request.client_token
+            client_token_accessor: request.client_token_accessor
+            namespace_id: request.namespace.id
+            path: request.path
+            data_paths: request.data.paths
+            remote_address: request.remote_address
+            remote_port: request.remote_port
+            response_mount_point: response.mount_point
+            response_mount_type: response.mount_type
+            response_mount_accessor: response.mount_accessor
+            response_mount_running_plugin_version: response.mount_running_plugin_version
+            response_mount_class: response.mount_class
+            response_data_capabilities: response.data.capabilities
+          drop_malformed: true
+      - labels:
+        stream:
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - output:
+          source: output
